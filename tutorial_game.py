@@ -4,7 +4,11 @@ from gamedata import GameData
 
 
 def isInside(sprite, mouse_x, mouse_y) -> bool:
-    pass
+    bounds = sprite.getWorldBounds()
+    if bounds.v1.x < mouse_x < bounds.v2.x and  bounds.v1.y < mouse_y < bounds.v3.x:
+        return True
+
+    return False
 
 
 class MyASGEGame(pyasge.ASGEGame):
@@ -38,19 +42,19 @@ class MyASGEGame(pyasge.ASGEGame):
         self.exit_option = None
         self.menu_option = 0
 
-        # This is a comment
+        # create the background
         self.data.background = pyasge.Sprite()
         self.initBackground()
 
-        #
+        # initialise the menu/text
         self.menu_text = None
         self.initMenu()
 
-        #
+        # initialise the scoreboard
         self.scoreboard = None
         self.initScoreboard()
 
-        # This is a comment
+        # initialise the fish
         self.fish = pyasge.Sprite()
         self.initFish()
 
@@ -62,10 +66,19 @@ class MyASGEGame(pyasge.ASGEGame):
             return False
 
     def initFish(self) -> bool:
-        pass
+        if self.fish.loadTexture("/data/images/kenney_fishpack/fishTile_073.png"):
+            self.fish.z_order = 1
+            # self.fish.scale = 1
+            self.spawn()
+            return True
+
+        return False
 
     def initScoreboard(self) -> None:
-        pass
+        self.scoreboard = pyasge.Text(self.data.fonts["MainFont"])
+        self.scoreboard.x = 1300
+        self.scoreboard.y = 75
+        self.scoreboard.string = str(self.data.score).zfill(6)
 
     def initMenu(self) -> bool:
         # title stuff
@@ -90,7 +103,11 @@ class MyASGEGame(pyasge.ASGEGame):
         return True
 
     def clickHandler(self, event: pyasge.ClickEvent) -> None:
-        pass
+        if event.action == pyasge.MOUSE.BUTTON_PRESSED and event.button == pyasge.MOUSE.MOUSE_BTN1:
+            if isInside(self.fish, event.x, event.y):
+                self.data.score += 1
+                self.scoreboard.string = str(self.data.score).zfill(6)
+                self.spawn()
 
     def keyHandler(self, event: pyasge.KeyEvent) -> None:
         if event.action == pyasge.KEYS.KEY_PRESSED:
@@ -106,10 +123,16 @@ class MyASGEGame(pyasge.ASGEGame):
                     self.play_option.colour = pyasge.COLOURS.LIGHTSLATEGRAY
                     self.exit_option.string = ">EXIT"
                     self.exit_option.colour = pyasge.COLOURS.HOTPINK
-        pass
+
+        if event.key == pyasge.KEYS.KEY_ENTER:
+            if self.menu_option == 0:
+                self.menu = False
+            else:
+                self.signal_exit()
 
     def spawn(self) -> None:
-        pass
+        self.fish.x = random.randint(0, self.data.game_res[0] - self.fish.width)
+        self.fish.y = random.randint(0, self.data.game_res[1] - self.fish.height)
 
     def update(self, game_time: pyasge.GameTime) -> None:
 
@@ -128,15 +151,17 @@ class MyASGEGame(pyasge.ASGEGame):
         @param game_time: The tick and frame deltas.
         """
 
+        self.data.renderer.render(self.data.background)
         if self.menu:
             # render the menu here
-            self.data.renderer.render(self.data.background)
             self.data.renderer.render(self.menu_text)
             self.data.renderer.render(self.play_option)
             self.data.renderer.render(self.exit_option)
             pass
         else:
             # render the game here
+            self.data.renderer.render(self.scoreboard)
+            self.data.renderer.render(self.fish)
             pass
 
 
